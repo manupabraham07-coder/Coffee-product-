@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6f4e37">
+<title>Coffee Marketing Manager</title>
+<style>
+:root{--coffee:#6f4e37;--coffee2:#4b2e1f;--cream:#fff8ef;--bg:#f5f6f8;--text:#242424;--muted:#777;--green:#238636;--red:#c62828;--blue:#1769aa}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--coffee2),var(--coffee));color:white;padding:16px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:20px}header small{opacity:.85}
+.container{max-width:1100px;margin:auto;padding:14px 14px 90px}
+nav{display:flex;gap:8px;overflow:auto;margin:10px 0 14px}
+nav button{white-space:nowrap;border:0;background:white;padding:10px 13px;border-radius:20px;font-weight:700;color:var(--coffee);box-shadow:0 1px 4px #0001}
+nav button.active{background:var(--coffee);color:white}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:750px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px #0000000b;margin-bottom:12px}
+.stat b{font-size:24px;display:block}.stat span{color:var(--muted);font-size:12px}
+h2{font-size:18px;margin:8px 0 12px}.row{display:flex;gap:8px;align-items:center;justify-content:space-between}.wrap{flex-wrap:wrap}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px;background:white;font:inherit}
+textarea{min-height:80px}label{font-size:12px;font-weight:700;color:#555;display:block;margin:9px 0 4px}
+button{border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}
+.primary{background:var(--coffee);color:white}.secondary{background:#eee;color:#333}.success{background:#e7f6ea;color:var(--green)}.danger{background:#fdeaea;color:var(--red)}.blue{background:#e7f1fb;color:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}th{color:#666;font-size:12px}
+.badge{display:inline-block;padding:4px 8px;border-radius:15px;background:#f1eadf;color:var(--coffee);font-size:11px;font-weight:700}
+.actions{display:flex;gap:5px;flex-wrap:wrap}.hidden{display:none}.empty{padding:25px;text-align:center;color:#888}
+.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;justify-content:center;z-index:20}.modal.show{display:flex}.modalbox{background:white;width:100%;max-width:650px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px}
+.toast{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:#222;color:white;padding:10px 15px;border-radius:20px;display:none;z-index:30}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #ddd;padding:8px;display:flex;justify-content:space-around;z-index:10}.bottom button{background:none;color:#555;font-size:11px;padding:6px}.bottom button.active{color:var(--coffee)}
+.kpi{font-size:13px;color:#666}.profit{background:var(--cream);border-left:4px solid var(--coffee)}
+</style>
+</head>
+<body>
+<header><h1>☕ Coffee Marketing Manager</h1><small>Marketing • Samples • Follow-ups • Orders • Reports</small></header>
+<div class="container">
+<nav id="nav"></nav>
+<main id="app"></main>
+</div>
+<div class="bottom" id="bottomNav"></div>
+<div class="modal" id="modal"><div class="modalbox"><div class="row"><h2 id="modalTitle">Add</h2><button class="secondary" onclick="closeModal()">✕</button></div><div id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='coffeeMarketingManagerV1';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ shops:[], samples:[], orders:[], followups:[], flavours:['Flavour 1','Flavour 2','Flavour 3','Flavour 4','Flavour 5'],
+ settings:{price:4000,hotYield:330,coldYield:165}
+};
+let page='dashboard', editId=null;
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+const toast=m=>{let t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800)};
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function shop(id){return db.shops.find(x=>x.id===id)||{}}
+function renderNav(){
+ const items=[['dashboard','🏠 Dashboard'],['shops','🏪 Shops'],['samples','🧪 Samples'],['orders','📦 Orders'],['followups','📅 Follow-ups'],['reports','📊 Reports']];
+ document.getElementById('nav').innerHTML=items.map(x=>`<button class="${page===x[0]?'active':''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+ document.getElementById('bottomNav').innerHTML=items.slice(0,5).map(x=>`<button class="${page===x[0]?'active':''}" onclick="go('${x[0]}')">${x[1]}</button>`).join('');
+}
+function go(p){page=p;renderNav();render()}
+function render(){renderNav();let a=document.getElementById('app');({dashboard:dashboard,shops:shops,samples:samples,orders:orders,followups:followups,reports:reports}[page])()}
+function dashboard(){
+ let sales=db.orders.reduce((s,o)=>s+Number(o.total||0),0),kg=db.orders.reduce((s,o)=>s+Number(o.qty||0),0);
+ let pending=db.orders.reduce((s,o)=>s+(o.payment==='Paid'?0:Number(o.total||0)),0);
+ let todayFU=db.followups.filter(f=>f.date===today()&&f.status!=='Done').length;
+ let interested=db.shops.filter(s=>['Interested','Sample Given','Feedback Pending','Trial','Order Received','Regular Customer'].includes(s.stage)).length;
+ document.getElementById('app').innerHTML=`
+ <div class="grid">
+ ${stat('🏪','Total Shops',db.shops.length)}${stat('⭐','Interested',interested)}
+ ${stat('🧪','Samples',db.samples.length)}${stat('📦','Orders',db.orders.length)}
+ ${stat('⚖️','KG Sold',kg.toFixed(2))}${stat('💰','Sales',money(sales))}
+ ${stat('⏰','Today Follow-ups',todayFU)}${stat('💳','Pending',money(pending))}
+ </div>
+ <div class="card profit"><h2>☕ Product Calculator</h2>
+ <div class="grid"><div><b>Hot</b><br>1 KG → ${db.settings.hotYield} cups<br>Cost/cup: ${money(db.settings.price/db.settings.hotYield)}</div>
+ <div><b>Cold</b><br>1 KG → ${db.settings.coldYield} cups<br>Cost/cup: ${money(db.settings.price/db.settings.coldYield)}</div></div>
+ <p class="kpi">Product price: ${money(db.settings.price)}/KG. Other costs such as milk, sugar, cups, labour and electricity are not included.</p></div>
+ <div class="card"><div class="row"><h2>Today's Action</h2><button class="primary" onclick="go('followups')">View All</button></div>
+ ${todayFU?db.followups.filter(f=>f.date===today()&&f.status!=='Done').slice(0,5).map(f=>`<div class="card"><b>${esc(shop(f.shopId).name||'Unknown Shop')}</b><br>${esc(f.reason||'Follow-up')} <span class="badge">${esc(f.status)}</span></div>`).join(''):'<div class="empty">No pending follow-ups today 🎉</div>'}</div>
+ <div class="card"><h2>Quick Add</h2><div class="actions">
+ <button class="primary" onclick="openShop()">+ Shop</button><button class="primary" onclick="openSample()">+ Sample</button><button class="primary" onclick="openFollowup()">+ Follow-up</button><button class="primary" onclick="openOrder()">+ Order</button></div></div>`;
+}
+function stat(i,t,v){return `<div class="card stat"><span>${i} ${t}</span><b>${v}</b></div>`}
+function shops(){
+ document.getElementById('app').innerHTML=`<div class="card"><div class="row wrap"><h2>🏪 Shops</h2><button class="primary" onclick="openShop()">+ Add Shop</button></div>
+ <input id="shopSearch" placeholder="Search shop, owner, phone, district..." oninput="drawShops()"></div><div id="shopList"></div>`;drawShops()
+}
+function drawShops(){
+ let q=(document.getElementById('shopSearch')?.value||'').toLowerCase();
+ let arr=db.shops.filter(s=>JSON.stringify(s).toLowerCase().includes(q));
+ document.getElementById('shopList').innerHTML=arr.length?arr.map(s=>`<div class="card"><div class="row"><div><h2>${esc(s.name)}</h2><span class="badge">${esc(s.stage||'New Lead')}</span> <span class="badge">${esc(s.priority||'Medium')}</span></div><button class="secondary" onclick="openShop('${s.id}')">Edit</button></div>
+ <p>${esc(s.owner||'')} ${s.phone?'• '+esc(s.phone):''}<br>${esc(s.area||'')} ${s.district?'• '+esc(s.district):''}</p>
+ <div class="actions"><button class="success" onclick="callShop('${s.phone||''}')">📞 Call</button><button class="blue" onclick="wa('${s.phone||''}')">💬 WhatsApp</button><button class="secondary" onclick="openSample(null,'${s.id}')">🧪 Sample</button><button class="secondary" onclick="openOrder(null,'${s.id}')">📦 Order</button><button class="danger" onclick="deleteShop('${s.id}')">Delete</button></div></div>`).join(''):'<div class="card empty">No shops found.</div>';
+}
+function openShop(eid){
+ let s=eid?shop(eid):{}, edit=!!eid;
+ document.getElementById('modalTitle').textContent=edit?'Edit Shop':'Add Shop';
+ document.getElementById('modalBody').innerHTML=`<label>Shop Name *</label><input id="f_name" value="${esc(s.name)}">
+ <label>Owner Name</label><input id="f_owner" value="${esc(s.owner)}">
+ <label>Phone</label><input id="f_phone" inputmode="tel" value="${esc(s.phone)}">
+ <label>WhatsApp</label><input id="f_wa" inputmode="tel" value="${esc(s.wa||s.phone||'')}">
+ <label>District</label><input id="f_district" value="${esc(s.district)}">
+ <label>Area / Town</label><input id="f_area" value="${esc(s.area)}">
+ <label>Address</label><textarea id="f_address">${esc(s.address)}</textarea>
+ <label>Shop Type</label><select id="f_type">${['Cafe','Hotel','Restaurant','Bakery','Juice Shop','Coffee Shop','Resort','Catering','Other'].map(x=>`<option ${s.type===x?'selected':''}>${x}</option>`).join('')}</select>
+ <label>Hot Coffee Selling Price</label><input id="f_hot" type="number" value="${s.hot||''}">
+ <label>Cold Coffee Selling Price</label><input id="f_cold" type="number" value="${s.cold||''}">
+ <label>Estimated Cups/Day</label><input id="f_cups" type="number" value="${s.cups||''}">
+ <label>Marketing Stage</label><select id="f_stage">${['New Lead','Contacted','Interested','Sample Given','Feedback Pending','Trial','Order Received','Regular Customer','Not Interested'].map(x=>`<option ${s.stage===x?'selected':''}>${x}</option>`).join('')}</select>
+ <label>Priority</label><select id="f_priority">${['High','Medium','Low'].map(x=>`<option ${s.priority===x?'selected':''}>${x}</option>`).join('')}</select>
+ <label>Next Follow-up</label><input id="f_date" type="date" value="${esc(s.nextDate||'')}">
+ <label>Notes</label><textarea id="f_notes">${esc(s.notes)}</textarea>
+ <button class="primary" style="width:100%;margin-top:12px" onclick="saveShop('${eid||''}')">Save Shop</button>`;
+ showModal()
+}
+function saveShop(eid){
+ let o={id:eid||id(),name:v('f_name'),owner:v('f_owner'),phone:v('f_phone'),wa:v('f_wa'),district:v('f_district'),area:v('f_area'),address:v('f_address'),type:v('f_type'),hot:+v('f_hot')||0,cold:+v('f_cold')||0,cups:+v('f_cups')||0,stage:v('f_stage'),priority:v('f_priority'),nextDate:v('f_date'),notes:v('f_notes'),updatedAt:new Date().toISOString()};
+ if(!o.name)return alert('Shop name is required');
+ let i=db.shops.findIndex(x=>x.id===o.id);if(i>=0)db.shops[i]=o;else db.shops.push(o);save();closeModal();toast('Shop saved');render()
+}
+function samples(){
+ document.getElementById('app').innerHTML=`<div class="card"><div class="row"><h2>🧪 Samples</h2><button class="primary" onclick="openSample()">+ Sample</button></div></div><div class="card"><table><thead><tr><th>Date</th><th>Shop</th><th>Flavour</th><th>Result</th><th>Follow-up</th></tr></thead><tbody>${db.samples.length?db.samples.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(shop(x.shopId).name)}</td><td>${esc(x.flavour)}</td><td><span class="badge">${esc(x.result)}</span></td><td>${esc(x.followup||'-')}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">No samples yet.</td></tr>'}</tbody></table></div>`
+}
+function openSample(eid, sid){
+ let s=eid?db.samples.find(x=>x.id===eid):{}, shopId=sid||s.shopId||'';
+ document.getElementById('modalTitle').textContent='Add Sample';
+ document.getElementById('modalBody').innerHTML=`<label>Shop *</label><select id="f_ss">${db.shops.map(x=>`<option value="${x.id}" ${shopId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+ <label>Date</label><input id="f_sd" type="date" value="${s.date||today()}">
+ <label>Flavour</label><select id="f_sf">${db.flavours.map(x=>`<option ${s.flavour===x?'selected':''}>${esc(x)}</option>`).join('')}</select>
+ <label>Hot / Cold</label><select id="f_sc"><option>Hot</option><option>Cold</option></select>
+ <label>Sample Quantity</label><input id="f_sq" type="number" step="0.01" value="${s.qty||''}">
+ <label>Feedback</label><textarea id="f_sfb">${esc(s.feedback)}</textarea>
+ <label>Result</label><select id="f_sr">${['Waiting','Interested','Trial','Order','Not Interested','No Response'].map(x=>`<option ${s.result===x?'selected':''}>${x}</option>`).join('')}</select>
+ <label>Follow-up Date</label><input id="f_sfd" type="date" value="${s.followup||''}">
+ <button class="primary" style="width:100%;margin-top:12px" onclick="saveSample('${eid||''}')">Save Sample</button>`;
+ showModal()
+}
+function saveSample(eid){
+ let o={id:eid||id(),shopId:v('f_ss'),date:v('f_sd'),flavour:v('f_sf'),mode:v('f_sc'),qty:+v('f_sq')||0,feedback:v('f_sfb'),result:v('f_sr'),followup:v('f_sfd')};
+ if(!o.shopId)return alert('Add a shop first');
+ let i=db.samples.findIndex(x=>x.id===o.id);if(i>=0)db.samples[i]=o;else db.samples.push(o);
+ let sh=shop(o.shopId);if(sh){sh.stage=o.result==='Order'?'Order Received':o.result==='Trial'?'Trial':o.result==='Interested'?'Interested':'Sample Given';if(o.followup)sh.nextDate=o.followup}
+ save();closeModal();toast('Sample saved');render()
+}
+function orders(){
+ let sales=db.orders.reduce((s,o)=>s+Number(o.total||0),0);
+ document.getElementById('app').innerHTML=`<div class="card"><div class="row"><h2>📦 Orders</h2><button class="primary" onclick="openOrder()">+ Order</button></div><p>Total sales: <b>${money(sales)}</b></p></div>
+ <div class="card"><table><thead><tr><th>Date</th><th>Shop</th><th>Flavour</th><th>KG</th><th>Total</th><th>Payment</th></tr></thead><tbody>${db.orders.length?db.orders.map(o=>`<tr><td>${esc(o.date)}</td><td>${esc(shop(o.shopId).name)}</td><td>${esc(o.flavour)}</td><td>${o.qty}</td><td>${money(o.total)}</td><td><span class="badge">${esc(o.payment)}</span></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No orders yet.</td></tr>'}</tbody></table></div>`
+}
+function openOrder(eid,sid){
+ let o=eid?db.orders.find(x=>x.id===eid):{}, shopId=sid||o.shopId||'';
+ document.getElementById('modalTitle').textContent='Add Order';
+ document.getElementById('modalBody').innerHTML=`<label>Shop *</label><select id="f_os">${db.shops.map(x=>`<option value="${x.id}" ${shopId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+ <label>Order Date</label><input id="f_od" type="date" value="${o.date||today()}">
+ <label>Flavour</label><select id="f_of">${db.flavours.map(x=>`<option ${o.flavour===x?'selected':''}>${esc(x)}</option>`).join('')}</select>
+ <label>Quantity KG</label><input id="f_oq" type="number" step="0.01" value="${o.qty||1}">
+ <label>Rate / KG</label><input id="f_or" type="number" value="${o.rate||db.settings.price}">
+ <label>Discount</label><input id="f_odisc" type="number" value="${o.discount||0}">
+ <label>Payment</label><select id="f_op"><option>Pending</option><option>Partial</option><option>Paid</option></select>
+ <label>Delivery</label><select id="f_odl"><option>Pending</option><option>Processing</option><option>Delivered</option><option>Cancelled</option></select>
+ <label>Notes</label><textarea id="f_on">${esc(o.notes)}</textarea>
+ <button class="primary" style="width:100%;margin-top:12px" onclick="saveOrder('${eid||''}')">Save Order</button>`;
+ showModal()
+}
+function saveOrder(eid){
+ let qty=+v('f_oq')||0,rate=+v('f_or')||0,discount=+v('f_odisc')||0;
+ let o={id:eid||id(),orderNo:eid?(db.orders.find(x=>x.id===eid)?.orderNo):'ORD-'+new Date().getFullYear()+'-'+String(db.orders.length+1).padStart(4,'0'),shopId:v('f_os'),date:v('f_od'),flavour:v('f_of'),qty,rate,discount,total:Math.max(0,qty*rate-discount),payment:v('f_op'),delivery:v('f_odl'),notes:v('f_on')};
+ if(!o.shopId)return alert('Add a shop first');
+ let i=db.orders.findIndex(x=>x.id===o.id);if(i>=0)db.orders[i]=o;else db.orders.push(o);
+ let sh=shop(o.shopId);if(sh)sh.stage='Regular Customer';
+ save();closeModal();toast('Order saved');render()
+}
+function followups(){
+ document.getElementById('app').innerHTML=`<div class="card"><div class="row"><h2>📅 Follow-ups</h2><button class="primary" onclick="openFollowup()">+ Follow-up</button></div></div>
+ ${db.followups.sort((a,b)=>a.date.localeCompare(b.date)).map(f=>`<div class="card"><div class="row"><b>${esc(shop(f.shopId).name||'Unknown')}</b><span class="badge">${esc(f.status)}</span></div><p>${esc(f.date)} • ${esc(f.reason)}<br>${esc(f.notes||'')}</p><div class="actions"><button class="success" onclick="doneFU('${f.id}')">✓ Done</button><button class="secondary" onclick="openFollowup('${f.id}')">Edit</button></div></div>`).join('')||'<div class="card empty">No follow-ups.</div>'}`
+}
+function openFollowup(eid){
+ let f=eid?db.followups.find(x=>x.id===eid):{};
+ document.getElementById('modalTitle').textContent='Follow-up';
+ document.getElementById('modalBody').innerHTML=`<label>Shop *</label><select id="f_fs">${db.shops.map(x=>`<option value="${x.id}" ${f.shopId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+ <label>Date</label><input id="f_fd" type="date" value="${f.date||today()}">
+ <label>Reason</label><select id="f_fr">${['First Call','Product Introduction','Sample Feedback','Trial Feedback','Order Follow-up','Payment Follow-up','Repeat Order','Other'].map(x=>`<option ${f.reason===x?'selected':''}>${x}</option>`).join('')}</select>
+ <label>Status</label><select id="f_fst"><option>Pending</option><option>Done</option></select>
+ <label>Notes</label><textarea id="f_fn">${esc(f.notes)}</textarea>
+ <button class="primary" style="width:100%;margin-top:12px" onclick="saveFollowup('${eid||''}')">Save</button>`;
+ showModal()
+}
+function saveFollowup(eid){
+ let o={id:eid||id(),shopId:v('f_fs'),date:v('f_fd'),reason:v('f_fr'),status:v('f_fst'),notes:v('f_fn')};
+ if(!o.shopId)return alert('Add a shop first');
+ let i=db.followups.findIndex(x=>x.id===o.id);if(i>=0)db.followups[i]=o;else db.followups.push(o);
+ let sh=shop(o.shopId);if(sh)sh.nextDate=o.date;
+ save();closeModal();toast('Follow-up saved');render()
+}
+function doneFU(i){let f=db.followups.find(x=>x.id===i);if(f)f.status='Done';save();render()}
+function reports(){
+ let sales=db.orders.reduce((s,o)=>s+Number(o.total||0),0),kg=db.orders.reduce((s,o)=>s+Number(o.qty||0),0);
+ let district={};db.orders.forEach(o=>{let d=shop(o.shopId).district||'Unknown';district[d]??={kg:0,sales:0,orders:0};district[d].kg+=+o.qty||0;district[d].sales+=+o.total||0;district[d].orders++});
+ let flav={};db.orders.forEach(o=>{flav[o.flavour]??={kg:0,sales:0,orders:0};flav[o.flavour].kg+=+o.qty||0;flav[o.flavour].sales+=+o.total||0;flav[o.flavour].orders++});
+ document.getElementById('app').innerHTML=`<div class="grid">${stat('📦','Orders',db.orders.length)}${stat('⚖️','KG',kg.toFixed(2))}${stat('💰','Sales',money(sales))}${stat('🧪','Samples',db.samples.length)}</div>
+ <div class="card"><h2>District-wise Report</h2><table><tr><th>District</th><th>Orders</th><th>KG</th><th>Sales</th></tr>${Object.entries(district).map(([d,x])=>`<tr><td>${esc(d)}</td><td>${x.orders}</td><td>${x.kg.toFixed(2)}</td><td>${money(x.sales)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No order data.</td></tr>'}</table></div>
+ <div class="card"><h2>Flavour-wise Report</h2><table><tr><th>Flavour</th><th>Orders</th><th>KG</th><th>Sales</th></tr>${Object.entries(flav).map(([d,x])=>`<tr><td>${esc(d)}</td><td>${x.orders}</td><td>${x.kg.toFixed(2)}</td><td>${money(x.sales)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No order data.</td></tr>'}</table></div>
+ <div class="card"><h2>Data Backup</h2><div class="actions"><button class="primary" onclick="exportJSON()">Export Backup</button><button class="secondary" onclick="document.getElementById('importFile').click()">Import Backup</button><button class="danger" onclick="resetDemo()">Clear All Data</button></div><input id="importFile" class="hidden" type="file" accept=".json" onchange="importJSON(event)"></div>`
+}
+function v(i){return document.getElementById(i)?.value||''}
+function showModal(){document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function callShop(p){if(p)location.href='tel:'+p;else toast('Phone number not available')}
+function wa(p){p=(p||'').replace(/\D/g,'');if(p.length===10)p='91'+p;if(p)location.href='https://wa.me/'+p;else toast('WhatsApp number not available')}
+function deleteShop(i){if(confirm('Delete this shop?')){db.shops=db.shops.filter(x=>x.id!==i);save();render()}}
+function exportJSON(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='coffee-marketing-backup.json';a.click()}
+function importJSON(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);save();toast('Backup imported');render()}catch{alert('Invalid backup file')}};r.readAsText(f)}
+function resetDemo(){if(confirm('Delete ALL local data?')){localStorage.removeItem(KEY);location.reload()}}
+render();
+</script>
+</body>
+</html>
