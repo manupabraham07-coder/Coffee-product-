@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffee Business Brochure</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f2eee8;color:#2b1b12}.wrap{max-width:900px;margin:auto;padding:16px}.card{background:white;border-radius:22px;overflow:hidden;box-shadow:0 8px 30px #0002}.hero{padding:32px 24px;background:linear-gradient(135deg,#3a2115,#7a4b2d);color:white}.hero h1{font-size:36px;margin:8px 0}.hero p{font-size:18px;line-height:1.5}.badge{display:inline-block;padding:7px 12px;border-radius:20px;background:#ffffff22}.section{padding:22px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.box{padding:18px;border-radius:16px;background:#f7f2ed}.box h3{margin-top:0}.price{font-size:28px;font-weight:bold}.profit{font-size:24px;font-weight:bold}.flavours span{display:inline-block;background:#ead8c8;padding:9px 12px;border-radius:18px;margin:4px}.note{font-size:13px;color:#6d625b}.cta{background:#2f7d4a;color:#fff;padding:20px;text-align:center}.btn{display:inline-block;border:0;padding:13px 18px;border-radius:12px;background:#fff;color:#2f7d4a;font-weight:bold;margin:5px;cursor:pointer;text-decoration:none}.editor{margin-top:18px}.editor details{background:#fff;border-radius:16px;padding:14px}.editor input,.editor textarea{width:100%;padding:11px;margin:6px 0 12px;border:1px solid #ddd;border-radius:10px}.editor textarea{min-height:80px}.actions{display:flex;gap:8px;flex-wrap:wrap}.darkbtn{background:#2f211a;color:white;border:0;padding:12px 16px;border-radius:10px}.hidden{display:none}@media(max-width:600px){.grid{grid-template-columns:1fr}.hero h1{font-size:29px}.wrap{padding:8px}}
+@media print{body{background:#fff}.wrap{padding:0}.editor,.print-hide{display:none!important}.card{box-shadow:none;border-radius:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<section class="hero">
+<div class="badge" id="brand">Premium Coffee</div>
+<h1 id="headline">A Better Cup. A Better Business.</h1>
+<p id="subheadline">Premium coffee designed for Hot & Cold Coffee menus.</p>
+</section>
+<section class="section">
+<h2>☕ Why add this coffee?</h2>
+<div class="grid">
+<div class="box"><h3>1. Better Cup Economics</h3><p id="a1">Create attractive selling value from every cup.</p></div>
+<div class="box"><h3>2. Hot & Cold Menu</h3><p id="a2">One coffee product for different menu options.</p></div>
+<div class="box"><h3>3. Multiple Flavours</h3><p id="a3">Give customers more choices and build repeat sales.</p></div>
+<div class="box"><h3>📦 Product Price</h3><div class="price">₹<span id="productPrice">4000</span> / 1 kg</div></div>
+</div>
+</section>
+<section class="section">
+<h2>🌟 Available Flavours</h2><div class="flavours" id="flavours"></div>
+</section>
+<section class="section">
+<h2>💰 Business Calculation</h2>
+<div class="grid">
+<div class="box"><h3>Hot Coffee</h3><p>Approx. yield: <b>330 cups / kg</b></p><p>Selling price: ₹<span id="hotPrice">60</span></p><p>Coffee cost/cup: ₹<span id="hotCost">12.12</span></p><p class="profit">₹<span id="hotProfit">47.88</span></p><p class="note">Gross contribution/cup before milk, sugar, cup, labour, electricity and other costs.</p></div>
+<div class="box"><h3>Cold Coffee</h3><p>Approx. yield: <b>165 cups / kg</b></p><p>Selling price: ₹<span id="coldPrice">120</span></p><p>Coffee cost/cup: ₹<span id="coldCost">24.24</span></p><p class="profit">₹<span id="coldProfit">95.76</span></p><p class="note">Gross contribution/cup before milk, sugar, ice, cup, labour, electricity and other costs.</p></div>
+</div>
+</section>
+<section class="cta">
+<h2 id="offer">More value from every cup</h2><p id="cta">Let’s discuss a trial order</p>
+<a class="btn" id="wa" href="#">WhatsApp</a><a class="btn" id="call" href="#">Call</a>
+</section>
+<section class="section"><p class="note">* Figures are based on the values entered in this brochure. Actual business profit depends on selling price and other operating costs.</p></section>
+</div>
+<div class="editor print-hide"><details open><summary><b>✏️ Brochure Settings</b></summary>
+<label>Brand name</label><input id="eBrand" value="Premium Coffee">
+<label>Headline</label><input id="eHeadline" value="A Better Cup. A Better Business.">
+<label>Short description</label><textarea id="eSub">Premium coffee designed for Hot & Cold Coffee menus.</textarea>
+<label>Flavours — one per line</label><textarea id="eFlavours">Flavour 1
+Flavour 2
+Flavour 3
+Flavour 4
+Flavour 5</textarea>
+<label>Product price / kg</label><input id="ePrice" type="number" value="4000">
+<label>Hot Coffee selling price</label><input id="eHot" type="number" value="60">
+<label>Cold Coffee selling price</label><input id="eCold" type="number" value="120">
+<label>Attract matter 1</label><input id="eA1" value="Create attractive selling value from every cup.">
+<label>Attract matter 2</label><input id="eA2" value="One coffee product for different menu options.">
+<label>Attract matter 3</label><input id="eA3" value="Give customers more choices and build repeat sales.">
+<label>Offer line</label><input id="eOffer" value="More value from every cup">
+<label>Call to action</label><input id="eCta" value="Let’s discuss a trial order">
+<label>WhatsApp / Phone number</label><input id="ePhone" placeholder="e.g. 919876543210">
+<div class="actions"><button class="darkbtn" onclick="save()">💾 Save</button><button class="darkbtn" onclick="window.print()">🖨️ Print / PDF</button><button class="darkbtn" onclick="resetData()">↺ Reset</button></div>
+</details></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function calc(){let p=+ePrice.value||0,h=+eHot.value||0,c=+eCold.value||0;$('productPrice').textContent=p;$('hotPrice').textContent=h;$('coldPrice').textContent=c;$('hotCost').textContent=(p/330).toFixed(2);$('coldCost').textContent=(p/165).toFixed(2);$('hotProfit').textContent=(h-p/330).toFixed(2);$('coldProfit').textContent=(c-p/165).toFixed(2)}
+function render(){brand.textContent=eBrand.value;headline.textContent=eHeadline.value;subheadline.textContent=eSub.value;a1.textContent=eA1.value;a2.textContent=eA2.value;a3.textContent=eA3.value;offer.textContent=eOffer.value;cta.textContent=eCta.value;flavours.innerHTML=eFlavours.value.split('\n').filter(x=>x.trim()).map(x=>'<span>'+x.replace(/</g,'&lt;')+'</span>').join('');calc();let n=ePhone.value.replace(/\D/g,'');wa.href=n?'https://wa.me/'+n+'?text='+encodeURIComponent('Hello, I am interested in your coffee product.'):'#';call.href=n?'tel:+'+n:'#'}
+function save(){let d={};document.querySelectorAll('.editor input,.editor textarea').forEach(x=>d[x.id]=x.value);localStorage.setItem('coffeeBrochure',JSON.stringify(d));render();alert('Brochure saved successfully');}
+function load(){let d=JSON.parse(localStorage.getItem('coffeeBrochure')||'null');if(d)Object.keys(d).forEach(k=>{if($(k))$(k).value=d[k]});render()}
+function resetData(){localStorage.removeItem('coffeeBrochure');location.reload()}
+['eBrand','eHeadline','eSub','eFlavours','ePrice','eHot','eCold','eA1','eA2','eA3','eOffer','eCta','ePhone'].forEach(id=>$(id).addEventListener('input',render));load();
+</script>
+</body></html>
